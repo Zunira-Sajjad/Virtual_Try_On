@@ -1,47 +1,128 @@
-import React, { useRef, useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, Text } from 'react-native';
-import { Camera, useCameraDevices, CameraPermissionStatus } from 'react-native-vision-camera';
+import React, {useEffect, useState, useRef} from 'react';
+import {
+  View,
+  StyleSheet,
+  Button,
+  TouchableOpacity,
+  Text,
+  Linking,
+  Image,
+} from 'react-native';
+import {Camera, useCameraDevices} from 'react-native-vision-camera';
 
-const MyCamera = () => {
-  const devices = useCameraDevices();
-  const device = devices.back; // use the back camera
+function MyCamera() {
   const camera = useRef(null);
-  const [imageUri, setImageUri] = useState(null);
+  const device = useCameraDevices('back');
 
-  const takePicture = async () => {
-    if (camera.current) {
-      const photo = await camera.current.takePhoto();
-      setImageUri(photo.path);
+  const [showCamera, setShowCamera] = useState(false);
+  const [imageSource, setImageSource] = useState('');
+
+  useEffect(() => {
+    async function getPermission() {
+      const newCameraPermission = await Camera.requestCameraPermission();
+      console.log(newCameraPermission);
+    }
+    getPermission();
+  }, []);
+
+  const capturePhoto = async () => {
+    if (camera.current !== null) {
+      const photo = await camera.current.takePhoto({});
+      setImageSource(photo.path);
+      setShowCamera(false);
+      console.log(photo.path);
     }
   };
 
-  if (device == null || device.cameraPermissionStatus !== CameraPermissionStatus.AUTHORIZED) {
-    return (
-      <View style={styles.container}>
-        <Text>No camera access. Check permissions.</Text>
-      </View>
-    );
+  if (device == null) {
+    return <Text>Camera not available</Text>;
   }
 
   return (
     <View style={styles.container}>
-      <Camera
-        ref={camera}
-        style={StyleSheet.absoluteFill}
-        device={device}
-        isActive={true}
-        photo={true}
-      />
-      <TouchableOpacity
-        style={styles.captureButton}
-        onPress={takePicture}
-      >
-        <Text style={styles.captureButtonText}>Capture</Text>
-      </TouchableOpacity>
-      {imageUri && <Text>Photo taken!</Text>}
+      {showCamera ? (
+        <>
+          <Camera
+            ref={camera}
+            style={StyleSheet.absoluteFill}
+            device={device}
+            isActive={showCamera}
+            photo={true}
+          />
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.camButton}
+              onPress={() => capturePhoto()}
+            />
+          </View>
+        </>
+      ) : (
+        <>
+          {imageSource !== '' ? (
+            <Image
+              style={styles.image}
+              source={{
+                uri: `file://'${imageSource}`,
+              }}
+            />
+          ) : null}
+
+          <View style={styles.backButton}>
+            <TouchableOpacity
+              style={{
+                backgroundColor: 'rgba(0,0,0,0.2)',
+                padding: 10,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: 10,
+                borderWidth: 2,
+                borderColor: '#fff',
+                width: 100,
+              }}
+              onPress={() => setShowCamera(true)}>
+              <Text style={{color: 'white', fontWeight: '500'}}>Back</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.buttonContainer}>
+            <View style={styles.buttons}>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#fff',
+                  padding: 10,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderRadius: 10,
+                  borderWidth: 2,
+                  borderColor: '#77c3ec',
+                }}
+                onPress={() => setShowCamera(true)}>
+                <Text style={{color: '#77c3ec', fontWeight: '500'}}>
+                  Retake
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#77c3ec',
+                  padding: 10,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderRadius: 10,
+                  borderWidth: 2,
+                  borderColor: 'white',
+                }}
+                onPress={() => setShowCamera(true)}>
+                <Text style={{color: 'white', fontWeight: '500'}}>
+                  Use Photo
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </>
+      )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -49,18 +130,46 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  captureButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FF0037',
-    position: 'absolute',
-    bottom: 50,
+  button: {
+    backgroundColor: 'gray',
   },
-  captureButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  backButton: {
+    backgroundColor: 'rgba(0,0,0,0.0)',
+    position: 'absolute',
+    justifyContent: 'center',
+    width: '100%',
+    top: 0,
+    padding: 20,
+  },
+  buttonContainer: {
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    bottom: 0,
+    padding: 20,
+  },
+  buttons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  camButton: {
+    height: 80,
+    width: 80,
+    borderRadius: 40,
+    //ADD backgroundColor COLOR GREY
+    backgroundColor: '#B2BEB5',
+
+    alignSelf: 'center',
+    borderWidth: 4,
+    borderColor: 'white',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    aspectRatio: 9 / 16,
   },
 });
 

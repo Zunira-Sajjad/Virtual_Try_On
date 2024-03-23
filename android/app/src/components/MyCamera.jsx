@@ -12,7 +12,8 @@ import {Camera, useCameraDevices} from 'react-native-vision-camera';
 
 function MyCamera() {
   const camera = useRef(null);
-  const device = useCameraDevices('back');
+  const devices = useCameraDevices();
+  const device = devices.back;
 
   const [showCamera, setShowCamera] = useState(false);
   const [imageSource, setImageSource] = useState('');
